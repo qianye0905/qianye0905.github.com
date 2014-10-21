@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <title>动态代理与拦截器的实现原理剖析 - Kelvin的胡言乱语</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Kelvin Hu" />
+    <meta name="description" content="java dynamic proxy source code analytics" />
+    <meta name="keywords" content="java, dynamic proxy" />
+    <link rel="stylesheet" href="/media/css/main.css" type="text/css">
+    <link rel="stylesheet" href="/media/css/prettify.css" type="text/css">
+  </head>
+  <body class="container">
+    <div>
+      <header class="masthead">
+        <h1 class="masthead-title"><a href="/">Kelvin的胡言乱语</a></h1>
+        <p>==============&gt; 重剑无锋，大巧不工。</p>
+        <ul>
+          <li><a href="/blog/">Blog</a></li>
+          <li><a href="/wiki/">Wiki</a></li>
+          <li><a href="/tags/">Tags</a></li>
+          <li><a href="/about/">About</a></li>
+          <li><a href="https://github.com/kelvinh">GitHub</a></li>
+          <li><a href="/rss.xml">RSS</a></li>
+        </ul>
+        <form method="get" id="searchform" action="http://www.google.com/search">
+          <input type="text" class="field" name="q" id="s" placeholder="Search">
+          <input type="hidden" name="q" value="site:kelvinh.github.io">
+        </form>
+      </header>
+    </div>
+
+<div>
+<div class="post">
+<h1>动态代理与拦截器的实现原理剖析</h1>
+<p>
+<b>这是我第二个博客其中的一篇文章。</b>
+</p>
+
+<p>
+下面是原文（未大改，稍作了一些格式上的调整）：
+</p>
+
+<hr  />
+
+<p>
+对动态代理的学习是从Struts 2的拦截器的学习引出来的，Struts 2的拦截器的实现即借用了动态代理，于是我又Google了一下动态代理的实现原理，看了几段代码，但终究对程序的运行原理似懂非懂，为彻底弄清动态代理的原理，我阅读了 <code>java.lang.reflect.Proxy</code> 类的源代码。
+</p>
+
+<p>
+Proxy类中有两个关键方法，一个是：
+</p>
+
+<pre class="example">
+public static Class&lt;?&gt; getProxyClass(ClassLoader loader, Class&lt;?&gt;... interfaces)
+</pre>
+
+<p>
+另一个是：
+</p>
+
+<pre class="example">
+public static Object newProxyInstance(ClassLoader loader, Class&lt;?&gt;[] interfaces, InvocationHandler h)
+</pre>
+
+<p>
+在 <code>newProxyInstance()</code> 中调用了 <code>getProxyClass()</code> ，但在 <code>getProxyClass()</code> 中由于native方法 <code>defineClass0()</code> 的存在，对这段代码的研究也未能彻底弄懂，不过还是大致弄懂了它的作用：程序传给它一个类加载器，若干个接口，它的作用就是利用这个类加载器，动态生成一个实现这若干个接口的类，并返回。
+</p>
+
+<p>
+下面再看 <code>newProxyInstance()</code> 方法，它有如下关键代码（其中省略了必要的try-catch语句块）：
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-java">Class cl = getProxyClass(loader, interfaces);
+Constructor cons = cl.getConstructor(constructorParams);
+// constructorParams的定义为：private final static Class[] constructorParams = {InvocationHandler.class};
+return (Object)cons.newInstance(new Object[]{h});
+</pre>
+</div>
+
+<p>
+可看出它首先是得到一个实现了参数中所列接口的类，通过第二句代码，可以猜出该类必定有一个构造方法为： <code>public Proxy(Class[]{InvocationHandler h})</code> ，通过第三句代码可以猜出，该类中定义了一个字段为： <code>private InvocationHandler h;</code> ，并且将参数中的InvocationHandler的一个引用传给该字段以创建一个新实例，然后返回该实例。
+</p>
+
+<p>
+从动态代理的作用可以猜出，这个返回类实现的所有方法，必定都只有一句代码： <code>return h.invoke(this, ..., ...);</code> 即所有方法都只调用了InvacationHandler实例的invoke方法，当然这个类中还要处理如何获得相应方法的封装类Method以及其形参args(Object[]类型)，并且作为参数传递给invoke()。
+</p>
+
+<p>
+好了，既然原理搞清楚了，下面就来做一个动态代理的实现示例：
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-java">package ini.always.DynamicProxy;
+
+import java.lang.reflect.*;
+
+interface Logic
+{
+    public void doSomeBusinessLogic();
+}
+
+class BusinessLogic implements Logic
+{
+    public void doSomeBusinessLogic()
+    {
+        System.out.println("in method doSomeBusinessLogic()");
+    }
+}
+
+class ProxyHandler implements InvocationHandler
+{
+    private Object target;
+
+    public ProxyHandler(Object target)
+    {
+        this.target = target;
+    }
+    public Object invoke(Object proxy, Method method, Object[] args) throws Exception
+    {
+        Object result;
+        before();
+        result = method.invoke(target, args);
+        after();
+        return result;
+    }
+    private void before()
+    {
+        System.out.println("before method doSomeBusinessLogic()");
+    }
+    private void after()
+    {
+        System.out.println("after method doSomeBusinessLogic()");
+    }
+}
+
+public class TestProxy
+{
+    public static void main(String[] args)
+    {
+        Logic logic = new BusinessLogic();
+        InvocationHandler h = new ProxyHandler(logic);
+        Logic proxy = (Logic) Proxy.newProxyInstance(Logic.class.getClassLoader(),logic.getClass().getInterfaces(), h);
+        proxy.doSomeBusinessLogic();
+    }
+}
+</pre>
+</div>
+
+<p>
+编译后运行，程序将输出：
+</p>
+
+<pre class="example">
+before method doSomeBusinessLogic()
+in method doSomeBusinessLogic()
+after method doSomeBusinessLogic()
+</pre>
+
+<p>
+这就是动态代理和拦截器的实现原理。
+</p>
+
+</div>
+</div>
+    <div>
+      <div class="post-meta">
+        <span title="post date" class="post-info">2010-03-14</span>
+        <span title="last modification date" class="post-info">2013-06-01</span>
+        <span title="tags" class="post-info"><a href="/tags/java/">Java</a></span>
+        <span title="author" class="post-info">Kelvin Hu</span>
+      </div>
+      <section>
+        <h1>Comments</h1>
+        <div id="disqus_thread"></div>
+        <script type="text/javascript">
+          //var disqus_developer = 1;
+          var disqus_identifier = "/blog/2010/03/14/dynamic-proxy-implementation-analytics/";
+          var disqus_url = "http://kelvinh.github.io/blog/2010/03/14/dynamic-proxy-implementation-analytics/";
+          var disqus_shortname = 'kelvinh';
+          /* * * DON'T EDIT BELOW THIS LINE * * */
+          (function() {
+          var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+          dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+          (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+          })();
+        </script>
+        <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+        <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+      </section>
+      <script src="http://code.jquery.com/jquery-latest.min.js"></script>
+      <script src="https://google-code-prettify.googlecode.com/svn/loader/prettify.js"></script>
+      <script src="/media/js/main.js"></script>
+      <script type="text/javascript">
+        var _gaq = _gaq || [];
+        _gaq.push(['_setAccount', 'UA-41088132-1']);
+        _gaq.push(['_trackPageview']);
+        (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+        })();
+      </script>
+      <div class="footer">
+        <p>Generated by <a href="http://www.gnu.org/software/emacs/">Emacs</a> 24.x (<a href="http://orgmode.org">Org mode</a> 8.x)</p>
+        <p>
+          Copyright &copy; 2012 - 2014 <a href="mailto:ini &lt;dot&gt; kelvin &lt;at&gt; gmail &lt;dot&gt; com">Kelvin Hu</a>
+          &nbsp;&nbsp;-&nbsp;&nbsp;
+          Powered by <a href="https://github.com/kelvinh/org-page" target="_blank">org-page</a>
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

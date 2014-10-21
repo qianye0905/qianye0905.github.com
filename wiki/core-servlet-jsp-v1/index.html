@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <title>Core Servlet and JSP第二版第一册读书笔记 - Kelvin的胡言乱语</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Kelvin Hu" />
+    <meta name="description" content="learning notes of book Core Servlet and JSP Volume 1/2(2nd Edition)" />
+    <meta name="keywords" content="java, servlet, jsp" />
+    <link rel="stylesheet" href="/media/css/main.css" type="text/css">
+    <link rel="stylesheet" href="/media/css/prettify.css" type="text/css">
+  </head>
+  <body class="container">
+    <div>
+      <header class="masthead">
+        <h1 class="masthead-title"><a href="/">Kelvin的胡言乱语</a></h1>
+        <p>==============&gt; 重剑无锋，大巧不工。</p>
+        <ul>
+          <li><a href="/blog/">Blog</a></li>
+          <li><a href="/wiki/">Wiki</a></li>
+          <li><a href="/tags/">Tags</a></li>
+          <li><a href="/about/">About</a></li>
+          <li><a href="https://github.com/kelvinh">GitHub</a></li>
+          <li><a href="/rss.xml">RSS</a></li>
+        </ul>
+        <form method="get" id="searchform" action="http://www.google.com/search">
+          <input type="text" class="field" name="q" id="s" placeholder="Search">
+          <input type="hidden" name="q" value="site:kelvinh.github.io">
+        </form>
+      </header>
+    </div>
+
+<div>
+<div class="post">
+<h1>Core Servlet and JSP第二版第一册读书笔记</h1>
+<p>
+This file recorded notes during learning <i>Core Servlet and JSP</i>.
+</p>
+
+<div id="outline-container-sec-1" class="outline-2">
+<h2 id="sec-1">A sample <code>web.xml</code>:</h2>
+<div class="outline-text-2" id="text-1">
+<div class="org-src-container">
+
+<pre class="src src-xml">&lt;?xml version="1.0" encoding="utf-8"?&gt;
+
+&lt;web-app xmlns="http://java.sun.com/xml/ns/j2ee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation=
+         "http://java.sun.com/xml/ns/j2ee
+          http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd"&gt;
+
+  &lt;display-name&gt;Servlet Testing&lt;/display-name&gt;
+  &lt;description&gt;
+    This web application demonstrates the usage of Servlet/JSP (mainly Servlet).
+    The contents are composed while reading Core Servlet and JSP Volume 2.
+  &lt;/description&gt;
+
+  &lt;!-- the following definition seems no effect... --&gt;
+  &lt;icon&gt;
+    &lt;small-icon&gt;/small.png&lt;/small-icon&gt;
+    &lt;large-icon&gt;/large.gif&lt;/large-icon&gt;
+  &lt;/icon&gt;
+
+  &lt;!-- the following definition seems no effect... --&gt;
+  &lt;mime-mapping&gt;
+    &lt;extension&gt;png&lt;/extension&gt;
+    &lt;mime-type&gt;text/plain&lt;/mime-type&gt;
+  &lt;/mime-mapping&gt;
+
+  &lt;context-param&gt;
+    &lt;param-name&gt;host&lt;/param-name&gt;
+    &lt;param-value&gt;nj-kelvin-hu&lt;/param-value&gt;
+  &lt;/context-param&gt;
+
+  &lt;error-page&gt;
+    &lt;error-code&gt;404&lt;/error-code&gt;
+    &lt;location&gt;/404.jsp&lt;/location&gt;
+  &lt;/error-page&gt;
+
+  &lt;error-page&gt;
+    &lt;exception-type&gt;java.lang.Exception&lt;/exception-type&gt;
+    &lt;location&gt;/exception.jsp&lt;/location&gt;
+  &lt;/error-page&gt;
+
+  &lt;listener&gt;
+    &lt;listener-class&gt;ini.kelvin.servlet.ContextListener&lt;/listener-class&gt;
+  &lt;/listener&gt;
+
+  &lt;listener&gt;
+    &lt;listener-class&gt;ini.kelvin.servlet.SessionListener&lt;/listener-class&gt;
+  &lt;/listener&gt;
+
+  &lt;filter&gt;
+    &lt;filter-name&gt;print&lt;/filter-name&gt;
+    &lt;filter-class&gt;ini.kelvin.servlet.PrintFilter&lt;/filter-class&gt;
+    &lt;init-param&gt;
+      &lt;param-name&gt;admin&lt;/param-name&gt;
+      &lt;param-value&gt;Kelvin Hu&lt;/param-value&gt;
+    &lt;/init-param&gt;
+  &lt;/filter&gt;
+  &lt;filter-mapping&gt;
+    &lt;filter-name&gt;print&lt;/filter-name&gt;
+    &lt;servlet-name&gt;Hello&lt;/servlet-name&gt;
+  &lt;/filter-mapping&gt;
+  &lt;filter-mapping&gt;
+    &lt;filter-name&gt;print&lt;/filter-name&gt;
+    &lt;url-pattern&gt;/*&lt;/url-pattern&gt;
+  &lt;/filter-mapping&gt;
+
+  &lt;servlet&gt;
+    &lt;servlet-name&gt;Hello&lt;/servlet-name&gt;
+    &lt;servlet-class&gt;ini.kelvin.servlet.HelloWorldServlet&lt;/servlet-class&gt;
+    &lt;init-param&gt;
+      &lt;param-name&gt;name&lt;/param-name&gt;
+      &lt;param-value&gt;Kelvin Hu&lt;/param-value&gt;
+    &lt;/init-param&gt;
+  &lt;/servlet&gt;
+  &lt;servlet-mapping&gt;
+    &lt;servlet-name&gt;Hello&lt;/servlet-name&gt;
+    &lt;url-pattern&gt;/hello&lt;/url-pattern&gt;
+  &lt;/servlet-mapping&gt;
+
+  &lt;welcome-file-list&gt;
+    &lt;welcome-file&gt;index.jsp&lt;/welcome-file&gt;
+    &lt;welcome-file&gt;index.html&lt;/welcome-file&gt;
+    &lt;welcome-file&gt;default.jsp&lt;/welcome-file&gt;
+  &lt;/welcome-file-list&gt;
+
+  &lt;session-config&gt;
+    &lt;session-timeout&gt;1&lt;/session-timeout&gt;
+  &lt;/session-config&gt;
+
+&lt;/web-app&gt;
+</pre>
+</div>
+
+<p>
+The value of <code>url-pattern</code> must start with <code>/</code> or <code>*.</code>.
+</p>
+
+<p>
+Matching Overlapping Patterns:
+</p>
+
+<ol class="org-ol">
+<li>Exact matches handled first: <a href="http://.../foo/bar">http://.../foo/bar</a> will be handled by <code>/foo/bar</code>, not <code>/foo/*</code>, also, <code>/foo/bar.html</code> will win over <code>*.html</code>, if the URL is <a href="http://.../foo/bar.html">http://.../foo/bar.html</a>.
+</li>
+
+<li>Directory mapping are preferred over extension mappings: the URL <a href="http://.../foo/bar.html">http://.../foo/bar.html</a> will be handled by <code>/foo/*</code>, not the pattern <code>*.html</code>.
+</li>
+
+<li>For overlapping directory mappings, the longest path is preferred: <a href="http://.../foo/bar/baz.html">http://.../foo/bar/baz.html</a> will be handled by <code>/foo/bar/*</code>, not <code>/foo/*</code>.
+</li>
+</ol>
+
+<p>
+Parameters defined in <code>&lt;init-param&gt;</code> could be read by the method <code>getInitParameter()</code> of <code>ServletConfig</code>.
+</p>
+
+<p>
+<code>&lt;load-on-startup&gt;</code> tells server the sequence that the servlet should be loaded into memory, lower number goes first, if two servlets have the same number, the load sequence is decided by server. Negative number cannot guarantee the servlet loading at startup.
+</p>
+
+<p>
+When defining the <code>&lt;location&gt;</code> of <code>&lt;error-page&gt;</code>, be careful of the leading slash, so <code>&lt;location&gt;/404.jsp&lt;/location&gt;</code> will work, but if the slash <code>/</code> removed, <code>404.jsp</code> will be not found.
+</p>
+</div>
+</div>
+<div id="outline-container-sec-2" class="outline-2">
+<h2 id="sec-2">HTTP/1.1 common request headers</h2>
+<div class="outline-text-2" id="text-2">
+<ol class="org-ol">
+<li><code>Accept</code>: specify the MIME types that the browser can handle
+</li>
+
+<li><code>Accept-Charset</code>: the character charset
+</li>
+
+<li><code>Accept-Encoding</code>: the encoding type, the most commonly used is "gzip, deflate"
+</li>
+
+<li><code>Accept-Language</code>: the language the browser excepted
+</li>
+
+<li><code>Authorization</code>: used to identify the browser when visiting some pages with password protection
+</li>
+
+<li><code>Connection</code>: to indicate if the browser can handle continuous HTTP connection, continuous connection can transfer several files(html, images, etc) in one socket, saved the cost of establishing multiple connections
+</li>
+
+<li><code>Content-Length</code>: only used for <code>POST</code>, specify the length of <code>POST</code> request
+</li>
+
+<li><code>Cookie</code>: return cookies back to http server, these cookies are formerly sent to browser by http server
+</li>
+
+<li><code>Host</code>: the host name and port number in the requested URL
+</li>
+
+<li><code>If-Modified-Since</code>: indicate the requested page is wanted only if the page has been modified after the specified date, otherwise the http server will send 304(Not Modified) instead, servlet should not handle this header directly, but implement <code>getLastModified()</code> method, let the server to handle the date comparison
+</li>
+
+<li><code>If-Unmodified-Since</code>: the opposite one of <code>If-Modified-Since</code>
+</li>
+
+<li><code>Referer</code>: the URL which referenced current page
+</li>
+
+<li><code>User-Agent</code>: to identify the client browser which sent the request
+</li>
+</ol>
+</div>
+</div>
+<div id="outline-container-sec-3" class="outline-2">
+<h2 id="sec-3">HTTP/1.1 common response headers</h2>
+<div class="outline-text-2" id="text-3">
+<ol class="org-ol">
+<li><code>Allow</code>: specify request methods the server supported
+</li>
+
+<li><code>Cache-Control</code>: tell client how to cache the document, can be set with the following values:
+<ul class="org-ul">
+<li><code>public</code>: the document can be cached
+</li>
+<li><code>private</code>: the document can only be cached in private cache for single user
+</li>
+<li><code>no-cache</code>: do not cache the document (old browsers use <code>Pragma</code>, so this header should also be set to <code>no-cache</code> for old browsers)
+</li>
+<li><code>no-store</code>: do not cache, even do not store in temp folder on local disk
+</li>
+<li><code>must-revalidate</code>: client must communicate with server to validate the document everytime when using it
+</li>
+<li><code>proxy-revalidate</code>: similar to previous one, only adapted to shared cache
+</li>
+<li><code>max-age=XXX</code>: the document will be invalid after <i>XXX</i> seconds, it is the replacement of header <code>Expires</code>, and it has higher priority when both of them exist
+</li>
+<li><code>s-max-age=XXX</code>: the shared cache should make the document invalid after <i>XXX</i> seconds
+</li>
+</ul>
+</li>
+
+<li><code>Connection</code>: used for continuouse connection, the value "close" tells the browser not to use continuous connection, default is continuous connection
+</li>
+
+<li><code>Content-Disposition</code>: make the browser to ask user to store the response with the specified name on disk, as below:
+
+<pre class="example">
+Content-Disposition: attachment; filename=some-file-name
+</pre>
+</li>
+
+<li><code>Content-Encoding</code>: the encoding used during response transmission
+</li>
+
+<li><code>Content-Language</code>: the language response used
+</li>
+
+<li><code>Content-Length</code>: the byte count of response, only used for continuous connection
+</li>
+
+<li><code>Content-Type</code>: the MIME of response, example:
+
+<pre class="example">
+Content-Type: text/html; charset=utf-8
+</pre>
+</li>
+
+<li><code>Expires</code>: see <code>Cache-Control</code> and <code>Pragma</code>
+</li>
+
+<li><code>Last-Modified</code>: the last modified time of the document
+</li>
+
+<li><code>Location</code>: required when status code is between 300 and 399, used to notify the browser where the document is stored, the browser will automatically connect to the new address and get the new document
+</li>
+
+<li><code>Pragma</code>: see <code>Cache-Control</code> and <code>Expires</code>
+</li>
+
+<li><code>Refresh</code>: tell browser to send request for the newest page after the interval, example use:
+
+<pre class="example">
+Refresh: 5; URL=http://host/path
+</pre>
+</li>
+
+<li><code>Retry-After</code>: used with status code 503, tell the client to retry after the interval
+</li>
+
+<li><code>Set-Cookie</code>: specify a cookie, every cookie needs a stand alone header
+</li>
+
+<li><code>WWW-Authenticate</code>: used with 401, tell browser the authentication type and domain needed in request header <code>Authorization</code>
+</li>
+</ol>
+</div>
+</div>
+
+</div>
+</div>
+    <div>
+      <div class="post-meta">
+        <span title="post date" class="post-info">2012-11-08</span>
+        <span title="last modification date" class="post-info">2013-03-31</span>
+        <span title="tags" class="post-info"><a href="/tags/java/">Java</a>, <a href="/tags/http/">HTTP</a></span>
+        <span title="author" class="post-info">Kelvin Hu</span>
+      </div>
+      <script src="http://code.jquery.com/jquery-latest.min.js"></script>
+      <script src="https://google-code-prettify.googlecode.com/svn/loader/prettify.js"></script>
+      <script src="/media/js/main.js"></script>
+      <script type="text/javascript">
+        var _gaq = _gaq || [];
+        _gaq.push(['_setAccount', 'UA-41088132-1']);
+        _gaq.push(['_trackPageview']);
+        (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+        })();
+      </script>
+      <div class="footer">
+        <p>Generated by <a href="http://www.gnu.org/software/emacs/">Emacs</a> 24.x (<a href="http://orgmode.org">Org mode</a> 8.x)</p>
+        <p>
+          Copyright &copy; 2012 - 2014 <a href="mailto:ini &lt;dot&gt; kelvin &lt;at&gt; gmail &lt;dot&gt; com">Kelvin Hu</a>
+          &nbsp;&nbsp;-&nbsp;&nbsp;
+          Powered by <a href="https://github.com/kelvinh/org-page" target="_blank">org-page</a>
+        </p>
+      </div>
+    </div>
+  </body>
+</html>
